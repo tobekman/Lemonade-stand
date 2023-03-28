@@ -1,0 +1,142 @@
+﻿@page "/"
+@using Application.Interfaces
+@using Application.Recipes
+@using Application.Fruits
+@using System.Collections.ObjectModel
+@using Application
+@inject IFruitPressService LemonadeService
+
+<div class="container">
+    <h1>Lemonade Stand Code Test</h1>
+    <h2>Available recipies</h2>
+    
+    <div class="container d-flex flex-column flex-md-row gap-3 mb-5">
+        @foreach (var recipe in _recipes)
+        {
+            <div class="card shadow-sm bg-light">
+                <div class="card-body">
+                    <h3 class="card-title">@recipe.Name</h3>
+                    <p class="card-text">Price per glass: @recipe.PricePerGlass</p>
+                    <p class="card-text">Fruits needed per glass: @recipe.ConsumptionPerGlass @GetFruitLabel(recipe)</p>
+                </div>
+            </div>
+        }
+    </div>
+    
+    @if (Result.Message != "")
+    {
+        @if (Result.IsError)
+        {
+            <div class="alert alert-danger">@Result.Message</div>
+        }
+        else
+        {
+            <div class="alert alert-success">@Result.Message</div>
+        }
+    }
+
+    <form>
+      <div class="mb-3">
+        <label for="recipe" class="form-label">Select Recipe:</label>
+        <select class="form-select" id="recipe" @bind="SelectedRecipe">
+          <option selected>Choose...</option>
+          <option value="apple">Apple Lemonade</option>
+          <option value="melon">Melon Lemonade</option>
+          <option value="orange">Orange Lemonade</option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label for="quantity" class="form-label">Ordered Quantity:</label>
+        <input type="number" class="form-control" id="quantity" @bind="OrderedQuantity">
+      </div>
+      <div class="mb-3">
+        <label for="money" class="form-label">Money Paid:</label>
+        <input type="number" class="form-control" id="money" @bind="MoneyPaid">
+      </div>
+      <div class="mb-3">
+        <label for="apples" class="form-label">Apples Added:</label>
+        <input type="number" class="form-control" id="apples" @bind="Apples">
+      </div>
+      <div class="mb-3">
+        <label for="melons" class="form-label">Melons Added:</label>
+        <input type="number" class="form-control" id="melons" @bind="Melons">
+      </div>
+      <div class="mb-3">
+        <label for="oranges" class="form-label">Oranges Added:</label>
+        <input type="number" class="form-control" id="oranges" @bind="Oranges">
+      </div>
+      <button class="btn btn-primary" @onclick:preventDefault="true" @onclick="SetMessage">Process Order</button>
+    </form>
+
+</div>
+@code
+{
+    private FruitPressResult Result { get; set; } = new();
+    private string? SelectedRecipe { get; set; }
+    private int OrderedQuantity { get; set; }
+    private int MoneyPaid { get; set; }
+    private int Apples { get; set; }
+    private int Melons { get; set; }
+    private int Oranges { get; set; }
+    private readonly List<IRecipe> _recipes = new()
+    {
+        new AppleLemonadeRecipe(),
+        new MelonLemonadeRecipe(),
+        new OrangeLemonadeRecipe()
+    };
+
+    private void SetMessage()
+    {
+        Result = LemonadeService.Produce(GetRecipe(), GetFruits(), MoneyPaid, OrderedQuantity);
+    }
+
+    private static string GetFruitLabel(IRecipe recipe)
+    {
+        var fruitType = recipe.AllowedFruit;
+
+        if (fruitType == typeof(Apple))
+        {
+            return "apples";
+        }
+        if (fruitType == typeof(Melon))
+        {
+            return "melons";
+        }
+        if (fruitType == typeof(Orange))
+        {
+            return "orange";
+        }
+
+        return "";
+    }
+
+    private IRecipe GetRecipe()
+    {
+        return SelectedRecipe switch
+        {
+            "apple" => new AppleLemonadeRecipe(),
+            "melon" => new MelonLemonadeRecipe(),
+            "orange" => new OrangeLemonadeRecipe(),
+            _ => new AppleLemonadeRecipe()
+            };
+    }
+
+    private Collection<IFruit> GetFruits()
+    {
+        var fruits = new Collection<IFruit>();
+        for (var i = 0; i < Apples; i++)
+        {
+            fruits.Add(new Apple());
+        } 
+        for (var i = 0; i < Melons; i++)
+        {
+            fruits.Add(new Melon());
+        } 
+        for (var i = 0; i < Oranges; i++)
+        {
+            fruits.Add(new Orange());
+        }
+        return fruits;
+    }
+
+}
